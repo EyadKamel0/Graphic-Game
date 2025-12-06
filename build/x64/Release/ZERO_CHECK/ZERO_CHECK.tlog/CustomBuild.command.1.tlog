@@ -1,6 +1,6 @@
-^C:\USERS\WINDOWS\DESKTOP\GRAPHICS PROJECT\BUILD\CMAKEFILES\943ADDAAE7ECB2821CC0E1BF6530FFC3\GENERATE.STAMP.RULE
+^C:\USERS\ENOVA\DOCUMENTS\GITHUB\GRAPHIC-GAME\BUILD\CMAKEFILES\B0E1E84EF35147B04048D4310B883D8B\GENERATE.STAMP.RULE
 setlocal
-"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SC:/Users/WinDows/Desktop/Graphics Project" "-BC:/Users/WinDows/Desktop/Graphics Project/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "C:/Users/WinDows/Desktop/Graphics Project/build/Starwave3D.sln"
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/enova/Documents/GitHub/Graphic-Game -BC:/Users/enova/Documents/GitHub/Graphic-Game/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/enova/Documents/GitHub/Graphic-Game/build/Starwave3D.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

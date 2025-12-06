@@ -1,153 +1,153 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\main.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Game.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\PlayerShip.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\PlayerShip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Texture.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\CameraController.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\CameraController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\LevelManager.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\LevelManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Level1OuterDriftZone.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Level1OuterDriftZone.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Level2SolarDebrisPath.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Level2SolarDebrisPath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Asteroid.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Asteroid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\SmallAsteroid.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SmallAsteroid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Bullet.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Bullet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Collectible.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Collectible.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\WavePortal.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\WavePortal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\BlackHolePortal.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\BlackHolePortal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\SimpleTextRenderer.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SimpleTextRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Skybox.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Skybox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\SatelliteFragment.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SatelliteFragment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\SwingSolarPanel.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SwingSolarPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\CometRock.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\CometRock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\Level2Collectible.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Level2Collectible.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\IntroScreen.cpp">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\IntroScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\WinDows\Desktop\Graphics Project\external\glad\src\glad.c">
+    <ClCompile Include="C:\Users\enova\Documents\GitHub\Graphic-Game\external\glad\src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Game.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\PlayerShip.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\PlayerShip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Shader.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Camera.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\CameraController.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\CameraController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Texture.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\BaseLevel.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\BaseLevel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\LevelManager.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\LevelManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Level1OuterDriftZone.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Level1OuterDriftZone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Level2SolarDebrisPath.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Level2SolarDebrisPath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Asteroid.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Asteroid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\SmallAsteroid.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SmallAsteroid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Bullet.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Bullet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Collectible.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Collectible.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\WavePortal.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\WavePortal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\BlackHolePortal.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\BlackHolePortal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\SimpleTextRenderer.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SimpleTextRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Skybox.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Skybox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\SatelliteFragment.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SatelliteFragment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\SwingSolarPanel.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\SwingSolarPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\CometRock.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\CometRock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\Level2Collectible.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\Level2Collectible.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\WinDows\Desktop\Graphics Project\IntroScreen.h">
+    <ClInclude Include="C:\Users\enova\Documents\GitHub\Graphic-Game\IntroScreen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\WinDows\Desktop\Graphics Project\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\enova\Documents\GitHub\Graphic-Game\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{51C2F547-C3AC-3174-84B8-790F438F8074}</UniqueIdentifier>
+      <UniqueIdentifier>{597F15C3-F3F5-3E30-9B12-482A8657D281}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{3804FAAC-B54A-3E6E-BB60-CA12597C2308}</UniqueIdentifier>
+      <UniqueIdentifier>{0085D4DE-E96D-3540-945E-B9B217BF8043}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
