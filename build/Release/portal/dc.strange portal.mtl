@@ -1,0 +1,12 @@
+# Blender 5.0.0 MTL File: 'dc.strange portal.blend'
+# www.blender.org
+
+newmtl Material.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 65.943466 10.242024 0.540544
+Ni 1.450000
+d 1.000000
+illum 2

@@ -1,0 +1,33 @@
+newmtl phong2SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd TX_Cylinder_Sci_Fi_1_1_Base_color.png
+map_Ka TX_Cylinder_Sci_Fi_1_1_AO.png
+bump  -bm 1 TX_Cylinder_Sci_Fi_1_1_Normal.png
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns -1.00
+newmtl phong3SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd TX_Cylinder_Sci_Fi_1_2_Base_color.png
+map_Ka TX_Cylinder_Sci_Fi_1_2_AO.png
+bump  -bm 1 TX_Cylinder_Sci_Fi_1_2_Normal.png
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns -1.00
+newmtl phong4SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd TX_Cylinder_Sci_Fi_1_3_Base_color.png
+map_Ka TX_Cylinder_Sci_Fi_1_3_AO.png
+bump  -bm 1 TX_Cylinder_Sci_Fi_1_3_Normal.png
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns -1.00

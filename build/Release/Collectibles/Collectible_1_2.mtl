@@ -1,0 +1,9 @@
+newmtl collectible_mat
+illum 4
+Kd 0.80 0.80 0.80
+Ka 0.20 0.20 0.20
+Tf 1.00 1.00 1.00
+map_Kd TX_Cylinder_Sci_Fi_1_2_Base_color.png
+Ni 1.00
+Ks 0.50 0.50 0.50
+Ns 32.00

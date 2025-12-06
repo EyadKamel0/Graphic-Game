@@ -1,0 +1,28 @@
+REQUIRED TEXTURES FOR COLLECTIBLES AND PORTAL
+=============================================
+
+The following texture files are needed for the collectible system:
+
+1. collectible.png
+   - Size: 256x256 or 512x512
+   - Used for Energy Shards and Power-ups (crystal/gem appearance)
+   - Recommended: Bright, colorful crystal/gem texture with transparency
+   - Can be generated or downloaded from free texture sites
+
+2. portal.png
+   - Size: 512x512
+   - Used for the Wave Portal (glowing ring/gate appearance)
+   - Recommended: Sci-fi portal/warp texture with glow effect
+   - Should have some transparency for blending
+
+PLACEHOLDER SOLUTION:
+If you don't have these textures yet, the game will try to load them.
+You can:
+- Use the ship.png texture temporarily
+- Create simple colored squares in an image editor
+- Download free textures from sites like:
+  * OpenGameArt.org
+  * Kenney.nl
+  * Textures.com (free tier)
+
+The code will still work without perfect textures - they're just for visuals!
