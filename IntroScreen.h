@@ -6,6 +6,7 @@
 #include <string>
 #include <atomic>
 #include <thread>
+#include "SimpleTextRenderer.h"
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -82,6 +83,11 @@ private:
     GLuint buttonShaderProgram;
     bool buttonHovered;
     bool playButtonClicked;
+    bool controlsButtonHovered;
+    bool controlsButtonClicked;
+    bool showingControls;
+    bool closeButtonHovered;
+    SimpleTextRenderer textRenderer;
     
     // Frame buffer for video data
     unsigned char* frameBuffer;
@@ -103,8 +109,13 @@ private:
     void renderFrame();
     void renderFrameWithButton();
     void renderButton();
+    void renderControlsButton();
+    void renderControlsScreen();
+    void renderCloseButton();
     void updateButtonHover();
     bool isMouseOverButton(double mouseX, double mouseY);
+    bool isMouseOverControlsButton(double mouseX, double mouseY);
+    bool isMouseOverCloseButton(double mouseX, double mouseY);
     void processInput();
     void processButtonInput();
     void startAudio();

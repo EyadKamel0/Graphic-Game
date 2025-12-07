@@ -21,9 +21,9 @@ void LevelManager::init(Game& game) {
     levels.push_back(std::make_unique<Level1OuterDriftZone>());
     levels.push_back(std::make_unique<Level2SolarDebrisPath>());
     
-    // Load first level
+    // Start at level 0 but don't load yet (will be loaded after intro)
     currentLevelIndex = 0;
-    loadLevel(currentLevelIndex, game);
+    waitingForLevelSwitch = false;
     
     std::cout << "Level Manager initialized with " << levels.size() << " levels" << std::endl;
 }
@@ -121,6 +121,25 @@ void LevelManager::skipToLevel(int levelIndex, Game& game) {
     waitingForLevelSwitch = false;
     
     std::cout << "\n[DEBUG] Jumped to " << levels[currentLevelIndex]->getLevelName() << "\n" << std::endl;
+}
+
+void LevelManager::resetToFirstLevel(Game& game) {
+    // Always cleanup current level
+    levels[currentLevelIndex]->cleanup();
+    
+    // HARDCODED: Force reset to first level (Level 1 = index 0)
+    currentLevelIndex = 0;
+    waitingForLevelSwitch = false;
+    
+    // Load Level 1
+    loadLevel(0, game);
+    
+    // CRITICAL: Mark Level 2 as not completed to prevent auto-switch
+    if (levels.size() > 1) {
+        levels[1]->resetCompletionState();
+    }
+    
+    std::cout << "\n[RESET] Forced reset to Level 1: " << levels[0]->getLevelName() << "\n" << std::endl;
 }
 
 int LevelManager::getCurrentLevelIndex() const {

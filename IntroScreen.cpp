@@ -47,9 +47,10 @@ uniform vec2 buttonCenter;
 uniform vec2 buttonSize;
 uniform float cornerRadius;
 uniform int renderText;
+uniform int isControlsButton;
 uniform vec2 screenSize;
 
-// Simple "PLAY GAME" text rendering using distance fields
+// Simple text rendering using distance fields
 float sdBox(vec2 p, vec2 b) {
     vec2 d = abs(p) - b;
     return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
@@ -60,7 +61,7 @@ float sdRoundedBox(vec2 p, vec2 b, float r) {
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
 }
 
-// Character rendering for "PLAY GAME" - simplified blocky font
+// Character rendering - simplified blocky font
 float renderChar(vec2 uv, int c) {
     float d = 1.0;
     float w = 0.15;  // stroke width
@@ -113,6 +114,47 @@ float renderChar(vec2 uv, int c) {
         d = min(d, sdBox(uv - vec2(0.0, 0.0), vec2(0.25, w)));  // middle horizontal
         d = min(d, sdBox(uv - vec2(0.0, -0.35), vec2(0.3, w))); // bottom horizontal
     }
+    // C
+    else if (c == 8) {
+        d = min(d, sdBox(uv - vec2(-0.3, 0.0), vec2(w, 0.5)));  // left vertical
+        d = min(d, sdBox(uv - vec2(0.0, 0.35), vec2(0.3, w)));  // top horizontal
+        d = min(d, sdBox(uv - vec2(0.0, -0.35), vec2(0.3, w))); // bottom horizontal
+    }
+    // O
+    else if (c == 9) {
+        d = min(d, sdBox(uv - vec2(-0.3, 0.0), vec2(w, 0.5)));  // left vertical
+        d = min(d, sdBox(uv - vec2(0.3, 0.0), vec2(w, 0.5)));   // right vertical
+        d = min(d, sdBox(uv - vec2(0.0, 0.35), vec2(0.3, w)));  // top horizontal
+        d = min(d, sdBox(uv - vec2(0.0, -0.35), vec2(0.3, w))); // bottom horizontal
+    }
+    // N
+    else if (c == 10) {
+        d = min(d, sdBox(uv - vec2(-0.3, 0.0), vec2(w, 0.5)));  // left vertical
+        d = min(d, sdBox(uv - vec2(0.3, 0.0), vec2(w, 0.5)));   // right vertical
+        d = min(d, sdBox(uv - vec2(-0.075, 0.125), vec2(w, 0.15)));  // top diagonal
+        d = min(d, sdBox(uv - vec2(0.075, -0.125), vec2(w, 0.15))); // bottom diagonal
+    }
+    // T
+    else if (c == 11) {
+        d = min(d, sdBox(uv - vec2(0.0, 0.0), vec2(w, 0.5)));   // vertical
+        d = min(d, sdBox(uv - vec2(0.0, 0.35), vec2(0.3, w)));  // top horizontal
+    }
+    // R
+    else if (c == 12) {
+        d = min(d, sdBox(uv - vec2(-0.3, 0.0), vec2(w, 0.5)));  // vertical
+        d = min(d, sdBox(uv - vec2(-0.1, 0.35), vec2(0.2, w)));  // top horizontal
+        d = min(d, sdBox(uv - vec2(-0.1, 0.0), vec2(0.2, w)));   // middle horizontal
+        d = min(d, sdBox(uv - vec2(0.1, 0.175), vec2(w, 0.175))); // right vertical top
+        d = min(d, sdBox(uv - vec2(0.1, -0.25), vec2(w, 0.1)));  // right diagonal leg
+    }
+    // S
+    else if (c == 13) {
+        d = min(d, sdBox(uv - vec2(0.0, 0.35), vec2(0.3, w)));  // top horizontal
+        d = min(d, sdBox(uv - vec2(0.0, 0.0), vec2(0.25, w)));  // middle horizontal
+        d = min(d, sdBox(uv - vec2(0.0, -0.35), vec2(0.3, w))); // bottom horizontal
+        d = min(d, sdBox(uv - vec2(-0.2, 0.175), vec2(w, 0.175))); // top left
+        d = min(d, sdBox(uv - vec2(0.2, -0.175), vec2(w, 0.175))); // bottom right
+    }
     // Space
     else if (c == 7) {
         d = 1.0;
@@ -123,31 +165,47 @@ float renderChar(vec2 uv, int c) {
 
 void main() {
     vec2 fragCoord = gl_FragCoord.xy;
-    vec2 center = vec2(screenSize.x * 0.5, screenSize.y * 0.5);
     
     if (renderText == 1) {
-        // Render text "PLAY GAME" - centered on screen
-        vec2 textPos = (fragCoord - center) / (screenSize.y * 0.05);
+        // Use buttonCenter for text positioning with fixed scale
+        // Use a base resolution of 720p for consistent text size
+        float baseScale = 720.0 * 0.05;  // Fixed scale based on 720p
+        vec2 textPos = (fragCoord - buttonCenter) / baseScale;
         
         float textAlpha = 0.0;
         
-        // Character positions for "PLAY GAME"
-        // P L A Y   G A M E
-        int chars[9] = int[9](0, 1, 2, 3, 7, 4, 2, 5, 6);
-        float startX = -4.0;
-        
-        for (int i = 0; i < 9; i++) {
-            vec2 charUV = textPos - vec2(startX + float(i) * 1.0, 0.0);
-            float d = renderChar(charUV, chars[i]);
-            if (d < 0.0) {
-                textAlpha = 1.0;
+        if (isControlsButton == 1) {
+            // Render "CONTROLS"
+            // C(8) O(9) N(10) T(11) R(12) O(9) L(1) S(13)
+            int chars[8] = int[8](8, 9, 10, 11, 12, 9, 1, 13);
+            float startX = -3.5;
+            
+            for (int i = 0; i < 8; i++) {
+                vec2 charUV = textPos - vec2(startX + float(i) * 1.0, 0.0);
+                float d = renderChar(charUV, chars[i]);
+                if (d < 0.0) {
+                    textAlpha = 1.0;
+                }
+            }
+        } else {
+            // Render "PLAY GAME"
+            // P L A Y   G A M E
+            int chars[9] = int[9](0, 1, 2, 3, 7, 4, 2, 5, 6);
+            float startX = -4.0;
+            
+            for (int i = 0; i < 9; i++) {
+                vec2 charUV = textPos - vec2(startX + float(i) * 1.0, 0.0);
+                float d = renderChar(charUV, chars[i]);
+                if (d < 0.0) {
+                    textAlpha = 1.0;
+                }
             }
         }
         
         FragColor = vec4(1.0, 1.0, 1.0, textAlpha);
     } else {
-        // Render button background - centered on screen
-        vec2 p = fragCoord - center;
+        // Render button background
+        vec2 p = fragCoord - buttonCenter;
         float d = sdRoundedBox(p, buttonSize * 0.5, cornerRadius);
         
         if (d < 0.0) {
@@ -192,7 +250,11 @@ IntroScreen::IntroScreen()
       buttonVbo(0),
       buttonShaderProgram(0),
       buttonHovered(false),
-      playButtonClicked(false) {
+      playButtonClicked(false),
+      controlsButtonHovered(false),
+      controlsButtonClicked(false),
+      showingControls(false),
+      closeButtonHovered(false) {
     
     // Set paths relative to executable (wide strings for Windows)
     video1Path = L"Intro/209588.mp4";
@@ -206,8 +268,10 @@ IntroScreen::~IntroScreen() {
 
 bool IntroScreen::init(GLFWwindow* win, int width, int height) {
     window = win;
-    screenWidth = width;
-    screenHeight = height;
+    
+    // Get actual framebuffer size for proper rendering
+    glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+    std::cout << "[Intro] Screen size: " << screenWidth << "x" << screenHeight << std::endl;
     
     if (!initOpenGLResources()) {
         std::cerr << "[Intro] Failed to initialize OpenGL resources" << std::endl;
@@ -218,6 +282,9 @@ bool IntroScreen::init(GLFWwindow* win, int width, int height) {
         std::cerr << "[Intro] Failed to initialize button resources" << std::endl;
         return false;
     }
+    
+    // Initialize text renderer for controls screen
+    textRenderer.init(screenWidth, screenHeight);
     
 #ifdef _WIN32
     if (!initMediaFoundation()) {
@@ -611,6 +678,10 @@ void IntroScreen::renderFrame() {
 }
 
 void IntroScreen::renderFrameWithButton() {
+    // Update screen size for fullscreen/windowed changes
+    glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+    textRenderer.updateScreenSize(screenWidth, screenHeight);
+    
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -625,8 +696,15 @@ void IntroScreen::renderFrameWithButton() {
     
     glDrawArrays(GL_TRIANGLES, 0, 6);
     
-    // Then render button on top
+    // Then render buttons on top
     renderButton();
+    renderControlsButton();
+    
+    // If showing controls, overlay the controls screen
+    if (showingControls) {
+        renderControlsScreen();
+        renderCloseButton();
+    }
     
     glEnable(GL_DEPTH_TEST);
     
@@ -641,8 +719,8 @@ void IntroScreen::renderButton() {
     glBindVertexArray(buttonVao);
     
     // Button dimensions - match isMouseOverButton
-    float buttonWidth = 350.0f;
-    float buttonHeight = 80.0f;
+    float buttonWidth = 450.0f;
+    float buttonHeight = 100.0f;
     float centerX = screenWidth / 2.0f;
     float centerY = screenHeight / 2.0f;
     
@@ -656,6 +734,7 @@ void IntroScreen::renderButton() {
     glUniform2f(glGetUniformLocation(buttonShaderProgram, "buttonSize"), buttonWidth, buttonHeight);
     glUniform1f(glGetUniformLocation(buttonShaderProgram, "cornerRadius"), 15.0f);
     glUniform1i(glGetUniformLocation(buttonShaderProgram, "renderText"), 0);
+    glUniform1i(glGetUniformLocation(buttonShaderProgram, "isControlsButton"), 0);
     glUniform2f(glGetUniformLocation(buttonShaderProgram, "screenSize"), (float)screenWidth, (float)screenHeight);
     
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -667,15 +746,164 @@ void IntroScreen::renderButton() {
     glDisable(GL_BLEND);
 }
 
+void IntroScreen::renderControlsButton() {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glUseProgram(buttonShaderProgram);
+    glBindVertexArray(buttonVao);
+    
+    float buttonWidth = 450.0f;
+    float buttonHeight = 100.0f;
+    float centerX = screenWidth / 2.0f;
+    float centerY = screenHeight / 2.0f + 120.0f; // 120px below play button
+    
+    // Set uniforms for button background
+    glUniform4f(glGetUniformLocation(buttonShaderProgram, "buttonColor"), 
+                controlsButtonHovered ? 0.3f : 0.15f,
+                controlsButtonHovered ? 0.6f : 0.4f,
+                controlsButtonHovered ? 0.9f : 0.7f,
+                0.85f);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "buttonCenter"), centerX, screenHeight - centerY);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "buttonSize"), buttonWidth, buttonHeight);
+    glUniform1f(glGetUniformLocation(buttonShaderProgram, "cornerRadius"), 15.0f);
+    glUniform1i(glGetUniformLocation(buttonShaderProgram, "renderText"), 0);
+    glUniform1i(glGetUniformLocation(buttonShaderProgram, "isControlsButton"), 1);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "screenSize"), (float)screenWidth, (float)screenHeight);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    // Render text
+    glUniform1i(glGetUniformLocation(buttonShaderProgram, "renderText"), 1);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    glDisable(GL_BLEND);
+}
+
+void IntroScreen::renderControlsScreen() {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glUseProgram(buttonShaderProgram);
+    glBindVertexArray(buttonVao);
+    
+    // Semi-transparent dark background - larger to fit all controls
+    float bgWidth = 850.0f;
+    float bgHeight = 600.0f;
+    float centerX = screenWidth / 2.0f;
+    float centerY = screenHeight / 2.0f;
+    
+    glUniform4f(glGetUniformLocation(buttonShaderProgram, "buttonColor"), 0.1f, 0.1f, 0.15f, 0.95f);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "buttonCenter"), centerX, screenHeight - centerY);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "buttonSize"), bgWidth, bgHeight);
+    glUniform1f(glGetUniformLocation(buttonShaderProgram, "cornerRadius"), 20.0f);
+    glUniform1i(glGetUniformLocation(buttonShaderProgram, "renderText"), 0);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "screenSize"), (float)screenWidth, (float)screenHeight);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    glDisable(GL_BLEND);
+    
+    // Render control text - positioned inside the box
+    float startX = centerX - 350.0f;
+    float startY = centerY - 260.0f;  // Shifted up more
+    float lineHeight = 40.0f;
+    glm::vec3 titleColor(0.3f, 0.7f, 1.0f);  // Light blue
+    glm::vec3 textColor(1.0f, 1.0f, 1.0f);   // White
+    
+    // Center the title at the top - same Y as close button
+    float titleY = centerY - bgHeight / 2.0f + 25.0f;
+    textRenderer.renderTextScaled("CONTROLS", centerX - 80.0f, titleY, titleColor, 2.0f);
+    
+    startY += lineHeight * 2.5f;
+    textRenderer.renderTextScaled("W S - MOVE SHIP UP DOWN", startX, startY, textColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("A D - MOVE SHIP LEFT RIGHT", startX, startY, textColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("LEFT MOUSE - SHOOT", startX, startY, textColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("RIGHT MOUSE - TOGGLE CAMERA", startX, startY, textColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("SPACE - BOOSTER", startX, startY, textColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("SHIFT - SLOW DOWN", startX, startY, textColor, 1.2f);
+    startY += lineHeight * 1.5f;
+    glm::vec3 cheatColor(1.0f, 0.8f, 0.2f);  // Yellow for cheats
+    textRenderer.renderTextScaled("1 - TELEPORT TO LEVEL 1", startX, startY, cheatColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("2 - GET ALL SHARDS LEVEL 1", startX, startY, cheatColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("3 - TELEPORT TO LEVEL 2", startX, startY, cheatColor, 1.2f);
+    startY += lineHeight;
+    textRenderer.renderTextScaled("4 - GET ALL CELLS LEVEL 2", startX, startY, cheatColor, 1.2f);
+}
+
+void IntroScreen::renderCloseButton() {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glUseProgram(buttonShaderProgram);
+    glBindVertexArray(buttonVao);
+    
+    float buttonSize = 50.0f;
+    float bgWidth = 850.0f;
+    float bgHeight = 600.0f;
+    float centerX = screenWidth / 2.0f;
+    float centerY = screenHeight / 2.0f;
+    
+    // X button in top-right corner of controls box
+    float closeX = centerX + bgWidth / 2.0f - buttonSize - 10.0f;
+    float closeY = centerY - bgHeight / 2.0f + 10.0f;
+    float closeCenterX = closeX + buttonSize / 2.0f;
+    float closeCenterY = closeY + buttonSize / 2.0f;
+    
+    // Render close button background
+    glUniform4f(glGetUniformLocation(buttonShaderProgram, "buttonColor"),
+                closeButtonHovered ? 0.9f : 0.6f,
+                closeButtonHovered ? 0.2f : 0.15f,
+                closeButtonHovered ? 0.2f : 0.15f,
+                0.9f);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "buttonCenter"), closeCenterX, screenHeight - closeCenterY);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "buttonSize"), buttonSize, buttonSize);
+    glUniform1f(glGetUniformLocation(buttonShaderProgram, "cornerRadius"), 5.0f);
+    glUniform1i(glGetUniformLocation(buttonShaderProgram, "renderText"), 0);
+    glUniform2f(glGetUniformLocation(buttonShaderProgram, "screenSize"), (float)screenWidth, (float)screenHeight);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    glDisable(GL_BLEND);
+    
+    // Render X text - centered in button
+    // Text origin is top-left, so adjust for centering
+    float textWidth = 12.0f;  // Approximate width of 'X' at scale 1.5
+    float textHeight = 20.0f; // Approximate height of 'X' at scale 1.5
+    textRenderer.renderTextScaled("X", closeCenterX - textWidth/2.0f, closeCenterY - textHeight/2.0f, glm::vec3(1.0f, 1.0f, 1.0f), 1.5f);
+}
+
 void IntroScreen::updateButtonHover() {
     double mouseX, mouseY;
     glfwGetCursorPos(window, &mouseX, &mouseY);
+    
+    // Get actual window size for proper coordinate mapping
+    int winWidth, winHeight;
+    glfwGetWindowSize(window, &winWidth, &winHeight);
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    
+    // Scale mouse coordinates if window size differs from framebuffer size
+    double scaleX = (double)fbWidth / winWidth;
+    double scaleY = (double)fbHeight / winHeight;
+    mouseX *= scaleX;
+    mouseY *= scaleY;
+    
     buttonHovered = isMouseOverButton(mouseX, mouseY);
+    controlsButtonHovered = isMouseOverControlsButton(mouseX, mouseY);
+    closeButtonHovered = isMouseOverCloseButton(mouseX, mouseY);
 }
 
 bool IntroScreen::isMouseOverButton(double mouseX, double mouseY) {
-    float buttonWidth = 350.0f;
-    float buttonHeight = 80.0f;
+    float buttonWidth = 450.0f;
+    float buttonHeight = 100.0f;
     float centerX = screenWidth / 2.0f;
     float centerY = screenHeight / 2.0f;
     
@@ -688,26 +916,68 @@ bool IntroScreen::isMouseOverButton(double mouseX, double mouseY) {
     return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
 }
 
+bool IntroScreen::isMouseOverControlsButton(double mouseX, double mouseY) {
+    float buttonWidth = 450.0f;
+    float buttonHeight = 100.0f;
+    float centerX = screenWidth / 2.0f;
+    float centerY = screenHeight / 2.0f + 120.0f; // 120px below play button
+    
+    float left = centerX - buttonWidth / 2.0f;
+    float right = centerX + buttonWidth / 2.0f;
+    float top = centerY - buttonHeight / 2.0f;
+    float bottom = centerY + buttonHeight / 2.0f;
+    
+    return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
+}
+
+bool IntroScreen::isMouseOverCloseButton(double mouseX, double mouseY) {
+    if (!showingControls) return false;
+    
+    float buttonSize = 50.0f;
+    float bgWidth = 850.0f;
+    float bgHeight = 600.0f;
+    float centerX = screenWidth / 2.0f;
+    float centerY = screenHeight / 2.0f;
+    
+    // X button in top-right corner of controls box
+    float closeX = centerX + bgWidth / 2.0f - buttonSize - 10.0f;
+    float closeY = centerY - bgHeight / 2.0f + 10.0f;
+    
+    float left = closeX;
+    float right = closeX + buttonSize;
+    float top = closeY;
+    float bottom = closeY + buttonSize;
+    
+    return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
+}
+
 void IntroScreen::processButtonInput() {
     static bool wasPressed = false;
     bool isPressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     
     // Detect click (press while over button)
-    if (isPressed && buttonHovered) {
-        playButtonClicked = true;
+    if (isPressed && !wasPressed) {
+        if (closeButtonHovered && showingControls) {
+            showingControls = false;  // Close controls screen
+        } else if (buttonHovered && !showingControls) {
+            playButtonClicked = true;
+        } else if (controlsButtonHovered && !showingControls) {
+            controlsButtonClicked = true;
+            showingControls = true;  // Show controls screen
+        }
     }
     
     wasPressed = isPressed;
 }
 
 void IntroScreen::processInput() {
-    // Skip intro on Space, Enter, or Escape
+    // Skip to Play Game button screen on Space, Enter, Escape, or Click
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ||
         glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS ||
         glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS ||
         glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         skipped = true;
-        videoPlaying = false;
+        freezeFrame = true;  // Go to Play Game screen instead of ending
     }
 }
 
@@ -719,6 +989,12 @@ void IntroScreen::play() {
     
     std::cout << "\n=== INTRO SEQUENCE STARTING ===" << std::endl;
     std::cout << "Press SPACE, ENTER, ESC, or CLICK to skip" << std::endl;
+    
+    // Small delay to prevent immediate input from previous screen
+    double startDelay = glfwGetTime() + 0.3;  // 300ms delay
+    while (glfwGetTime() < startDelay) {
+        glfwPollEvents();  // Keep window responsive
+    }
     
 #ifdef _WIN32
     // Start background music
@@ -739,6 +1015,12 @@ void IntroScreen::play() {
     // Main intro loop
     while (videoPlaying && !glfwWindowShouldClose(window)) {
         processInput();
+        
+        // If user skipped, go to freeze frame with Play Game button
+        if (skipped && freezeFrame) {
+            std::cout << "[Intro] Video skipped, showing Play Game button" << std::endl;
+            break;  // Exit video loop and go to Play Game screen
+        }
         
         if (!videoPlaying) break;
         
@@ -761,49 +1043,56 @@ void IntroScreen::play() {
                         }
                         std::cout << "[Intro] Switching to second video" << std::endl;
                     } else {
-                        // Second video ended - freeze on last frame with Play Game button
-                        std::cout << "[Intro] Second video ended, showing Play Game button" << std::endl;
-                        freezeFrame = true;
-                        playButtonClicked = false;
-                        
-                        // Keep frozen until Play Game button is clicked
-                        double freezeStartTime = glfwGetTime();
-                        double maxFreezeTime = 120.0;  // Max 2 minutes freeze (longer since waiting for button)
-                        
-                        while (!glfwWindowShouldClose(window)) {
-                            glfwPollEvents();
-                            
-                            // Update button hover state
-                            updateButtonHover();
-                            
-                            // Process button input
-                            processButtonInput();
-                            
-                            // Exit only when button is clicked
-                            if (playButtonClicked) {
-                                std::cout << "[Intro] Play Game button clicked!" << std::endl;
-                                videoPlaying = false;
-                                break;
-                            }
-                            
-                            // Check timeout (safety)
-                            if (glfwGetTime() - freezeStartTime > maxFreezeTime) {
-                                std::cout << "[Intro] Freeze timeout, ending intro" << std::endl;
-                                videoPlaying = false;
-                                break;
-                            }
-                            
-                            // Render frame with button overlay
-                            renderFrameWithButton();
-                            
-                            // Small wait to prevent CPU spinning
-                            glfwWaitEventsTimeout(0.016);  // ~60fps
-                        }
+                        // Second video ended - will show Play Game button after loop
+                        std::cout << "[Intro] Second video ended" << std::endl;
+                        videoPlaying = false;
+                        break;
                     }
                 }
             }
             
             renderFrame();
+        }
+    }
+    
+    // After video ends (completed or skipped), show Play Game button screen
+    if (!glfwWindowShouldClose(window)) {
+        std::cout << "[Intro] Showing Play Game button" << std::endl;
+        freezeFrame = true;
+        playButtonClicked = false;
+        controlsButtonClicked = false;
+        showingControls = false;
+        
+        // Keep frozen until Play Game button is clicked
+        double freezeStartTime = glfwGetTime();
+        double maxFreezeTime = 120.0;  // Max 2 minutes freeze
+        
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+            
+            // Update button hover state
+            updateButtonHover();
+            
+            // Process button input
+            processButtonInput();
+            
+            // Exit only when Play Game button is clicked
+            if (playButtonClicked) {
+                std::cout << "[Intro] Play Game button clicked!" << std::endl;
+                break;
+            }
+            
+            // Check timeout (safety)
+            if (glfwGetTime() - freezeStartTime > maxFreezeTime) {
+                std::cout << "[Intro] Freeze timeout, ending intro" << std::endl;
+                break;
+            }
+            
+            // Render frame with button overlay
+            renderFrameWithButton();
+            
+            // Small wait to prevent CPU spinning
+            glfwWaitEventsTimeout(0.016);  // ~60fps
         }
     }
     

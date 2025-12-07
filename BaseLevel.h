@@ -46,6 +46,9 @@ public:
     // Score persistence between levels
     virtual int getScore() const = 0;
     virtual void setScore(int newScore) = 0;
+    
+    // Reset completion state (used when restarting game)
+    virtual void resetCompletionState() = 0;
 };
 
 #endif

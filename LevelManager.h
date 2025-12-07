@@ -33,6 +33,9 @@ public:
     // Skip directly to a specific level (for testing)
     void skipToLevel(int levelIndex, Game& game);
     
+    // Reset to first level (used when restarting game)
+    void resetToFirstLevel(Game& game);
+    
     // Get current level index
     int getCurrentLevelIndex() const;
     

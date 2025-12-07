@@ -92,6 +92,10 @@ public:
     int getScore() const override { return score; }
     void setScore(int newScore) override { score = newScore; }
     
+    // Debug/cheat methods
+    void collectAllCells();  // Collect all cells and activate portal
+    void resetCompletionState() override;  // Reset completion state
+    
 private:
     // Skybox for space background
     Skybox* skybox;
@@ -199,6 +203,9 @@ private:
     
     // Win screen text renderer
     SimpleTextRenderer winTextRenderer;
+    
+    // Key state tracking for debouncing
+    bool spaceKeyWasPressed;
     
     // ═══════════════════════════════════════════════════════════════
     //  2D HUD RENDERING

@@ -1137,6 +1137,33 @@ void Level1OuterDriftZone::playAsteroidBreakSound() {
     // Later: soundEngine->playSound("asteroid_break.wav");
 }
 
+void Level1OuterDriftZone::collectAllShards() {
+    // Set collected shards to required amount
+    collectedShardCount = requiredShardCount;
+    hudState.collectedShards = requiredShardCount;
+    
+    // Spawn portal if it doesn't exist
+    if (!portal) {
+        float portalZ = -175.0f;  // 175 units ahead of origin
+        portal = new WavePortal(glm::vec3(0.0f, 0.0f, portalZ));
+        portal->setupMesh();
+        portal->spawn();
+        std::cout << "[CHEAT] Portal spawned at z=" << portalZ << std::endl;
+    }
+    
+    // Activate portal
+    portal->activate();
+    hudState.portalActive = true;
+    hudState.portalActivatedFlashTimer = 1.0f;
+    std::cout << "[CHEAT] All shards collected! Portal activated!" << std::endl;
+}
+
+void Level1OuterDriftZone::resetCompletionState() {
+    completed = false;
+    gameOver = false;
+    portalBeingCaptured = false;
+}
+
 void Level1OuterDriftZone::render(Game& game) {
     // Render skybox first (before everything else)
     if (skybox && game.getCameraController()) {
@@ -1604,15 +1631,29 @@ void Level1OuterDriftZone::renderHUD2D() {
     }
     yPos += heartSize + 15.0f;
     
-    // Shard bars (5 segments)
+    // Shard bars (5 segments) - Enhanced with borders and glow
+    float shardWidth = 30.0f;
+    float shardSpacing = 35.0f;
     for (int i = 0; i < hudState.totalShards; ++i) {
-        float r, g, b;
+        float xPos = margin + i * shardSpacing;
+        
+        // Outer border (darker)
+        drawHUDQuad(xPos - 2.0f, yPos - 2.0f, shardWidth + 4.0f, barHeight + 4.0f, 0.1f, 0.1f, 0.1f);
+        
         if (i < hudState.collectedShards) {
-            r = 1.0f; g = 0.9f; b = 0.0f;  // Gold
+            // Collected: Gold with glow
+            float pulse = 0.9f + 0.1f * sin(levelTimer * 5.0f + i * 0.5f);
+            // Glow effect (behind)
+            drawHUDQuad(xPos - 3.0f, yPos - 3.0f, shardWidth + 6.0f, barHeight + 6.0f, 1.0f * 0.3f * pulse, 0.9f * 0.3f * pulse, 0.0f);
+            // Main bar with gradient (brighter top)
+            drawHUDQuad(xPos, yPos, shardWidth, barHeight * 0.5f, 1.0f * pulse, 0.95f * pulse, 0.2f);  // Top half
+            drawHUDQuad(xPos, yPos + barHeight * 0.5f, shardWidth, barHeight * 0.5f, 0.9f * pulse, 0.85f * pulse, 0.0f);  // Bottom half
         } else {
-            r = 0.3f; g = 0.3f; b = 0.3f;  // Dark gray
+            // Empty: Dark gray
+            drawHUDQuad(xPos, yPos, shardWidth, barHeight, 0.25f, 0.25f, 0.25f);
+            // Inner shadow
+            drawHUDQuad(xPos, yPos, shardWidth, 3.0f, 0.15f, 0.15f, 0.15f);
         }
-        drawHUDQuad(margin + i * 35.0f, yPos, 30.0f, barHeight, r, g, b);
     }
     yPos += barHeight + 10.0f;
     
@@ -1652,16 +1693,42 @@ void Level1OuterDriftZone::renderHUD2D() {
         yPos += barHeight + 10.0f;
     }
     
-    // Portal status bar
+    // Portal status bar - Enhanced
+    float portalBarWidth = 150.0f;
     float r, g, b;
+    std::string portalText;
+    
+    // Outer border
+    drawHUDQuad(margin - 2.0f, yPos - 2.0f, portalBarWidth + 4.0f, barHeight + 4.0f, 0.1f, 0.1f, 0.1f);
+    
     if (hudState.portalActive) {
         r = 0.0f; g = 1.0f; b = 0.5f;  // Green (active)
+        portalText = "PORTAL READY";
+        // Pulsing glow
+        float pulse = 0.8f + 0.2f * sin(levelTimer * 6.0f);
+        drawHUDQuad(margin - 3.0f, yPos - 3.0f, portalBarWidth + 6.0f, barHeight + 6.0f, 0.0f, 1.0f * 0.4f * pulse, 0.5f * 0.4f * pulse);
+        // Gradient fill
+        drawHUDQuad(margin, yPos, portalBarWidth, barHeight * 0.5f, 0.2f, 1.0f * pulse, 0.7f * pulse);
+        drawHUDQuad(margin, yPos + barHeight * 0.5f, portalBarWidth, barHeight * 0.5f, 0.0f, 0.8f * pulse, 0.4f * pulse);
     } else if (portal && portal->getState() == PortalState::Activating) {
         r = 1.0f; g = 0.5f; b = 0.0f;  // Orange (spawning)
+        portalText = "SPAWNING...";
+        float pulse = 0.7f + 0.3f * sin(levelTimer * 8.0f);
+        drawHUDQuad(margin - 3.0f, yPos - 3.0f, portalBarWidth + 6.0f, barHeight + 6.0f, 1.0f * 0.3f * pulse, 0.5f * 0.3f * pulse, 0.0f);
+        drawHUDQuad(margin, yPos, portalBarWidth, barHeight, r * pulse, g * pulse, b * 0.2f);
     } else {
-        r = 0.5f; g = 0.5f; b = 0.5f;  // Gray (locked)
+        r = 0.4f; g = 0.4f; b = 0.4f;  // Gray (locked)
+        portalText = "LOCKED";
+        drawHUDQuad(margin, yPos, portalBarWidth, barHeight, r, g, b);
+        // Diagonal stripes for locked state
+        for (int i = 0; i < 8; ++i) {
+            float stripeX = margin + i * 20.0f;
+            drawHUDQuad(stripeX, yPos, 2.0f, barHeight, 0.3f, 0.3f, 0.3f);
+        }
     }
-    drawHUDQuad(margin, yPos, 150.0f, barHeight, r, g, b);
+    
+    // Portal status text
+    winTextRenderer.renderTextScaled(portalText, margin + 5.0f, yPos + 6.0f, glm::vec3(r, g, b), 1.0f);
     
     // Score display (top-right corner)
     std::string scoreText = std::to_string(score);
@@ -1670,50 +1737,168 @@ void Level1OuterDriftZone::renderHUD2D() {
     
     // Game Over overlay
     if (!hudState.shipAlive) {
-        // Calculate centered position for "GAME OVER" (9 chars)
-        float gameOverScale = 2.5f;
+        // Deep space background with more color
+        drawHUDQuad(0.0f, 0.0f, hudScreenWidth, hudScreenHeight, 0.05f, 0.05f, 0.15f);
+        
+        // Animated starfield effect - random stars
+        srand(12345);  // Fixed seed for consistent star positions
+        for (int i = 0; i < 200; ++i) {
+            float starX = (rand() % (int)hudScreenWidth);
+            float starY = (rand() % (int)hudScreenHeight);
+            float starSize = 1.0f + (rand() % 3);
+            
+            // Twinkling effect
+            float twinkle = 0.5f + 0.5f * sin(levelTimer * 3.0f + i * 0.5f);
+            float brightness = 0.7f + 0.3f * twinkle;
+            
+            drawHUDQuad(starX, starY, starSize, starSize, brightness, brightness, brightness);
+        }
+        
+        // Shooting stars
+        for (int i = 0; i < 3; ++i) {
+            float shootTime = fmod(levelTimer * 0.8f + i * 2.0f, 5.0f);
+            if (shootTime < 1.5f) {
+                float progress = shootTime / 1.5f;
+                float shootX = -100.0f + progress * (hudScreenWidth + 200.0f);
+                float shootY = 100.0f + i * 200.0f + progress * 100.0f;
+                
+                // Shooting star trail
+                for (int j = 0; j < 10; ++j) {
+                    float fade = 1.0f - (j / 10.0f);
+                    float px = shootX - j * 8.0f;
+                    float py = shootY - j * 4.0f;
+                    drawHUDQuad(px, py, 4.0f, 2.0f, 0.9f * fade, 0.9f * fade, 1.0f * fade);
+                }
+            }
+        }
+        
+        // Calculate text positions centered on actual screen dimensions
+        float gameOverScale = 3.5f;
         float charWidth = 8.0f * gameOverScale;
-        float gameOverTextWidth = 9 * charWidth;  // "GAME OVER" = 9 chars
+        float gameOverTextWidth = 9 * charWidth;
         float gameOverX = (hudScreenWidth - gameOverTextWidth) / 2.0f;
-        float gameOverY = hudScreenHeight / 2.0f;
+        float gameOverY = (hudScreenHeight / 2.0f) - 60.0f;
         
-        // Red flash overlay - centered
-        float overlayWidth = 480.0f;
-        float overlayHeight = 120.0f;
-        float overlayX = (hudScreenWidth - overlayWidth) / 2.0f;
-        float overlayY = gameOverY - overlayHeight / 2.0f - 20.0f;
-        drawHUDQuad(overlayX, overlayY, overlayWidth, overlayHeight, 1.0f, 0.0f, 0.0f);
+        // Pulsing cosmic text effect with red/orange glow
+        float textPulse = 0.7f + 0.3f * sin(levelTimer * 4.0f);
+        glm::vec3 textColor = glm::vec3(1.0f, 0.4f + textPulse * 0.2f, 0.1f);
         
-        // Show "GAME OVER" text - centered
-        winTextRenderer.renderTextScaled("GAME OVER", gameOverX, gameOverY, glm::vec3(1.0f, 1.0f, 1.0f), gameOverScale);
-    }
-    
-    // Win overlay (if completed)
-    if (completed) {
-        // Calculate centered position for "YOU WIN!!" (9 chars)
-        float winScale = 3.0f;
-        float winCharWidth = 8.0f * winScale;
-        float winTextWidth = 9 * winCharWidth;  // "YOU WIN!!" = 9 chars
-        float winX = (hudScreenWidth - winTextWidth) / 2.0f;
-        float winY = hudScreenHeight / 2.0f + 20.0f;
+        // Main "GAME OVER" text with glow effect (multiple shadows)
+        for (int i = 3; i > 0; --i) {
+            float glowDist = i * 2.0f;
+            float glowAlpha = 0.4f / i;
+            winTextRenderer.renderTextScaled("GAME OVER", gameOverX + glowDist, gameOverY + glowDist, 
+                                            glm::vec3(1.0f * glowAlpha, 0.3f * glowAlpha, 0.0f), gameOverScale);
+        }
+        winTextRenderer.renderTextScaled("GAME OVER", gameOverX, gameOverY, textColor, gameOverScale);
         
-        // Calculate score text position
-        std::string scoreStr = "SCORE:" + std::to_string(score);
+        // Score display with cyan cosmic color
+        std::string scoreStr = "SCORE: " + std::to_string(score);
         float scoreScale = 2.0f;
         float scoreCharWidth = 8.0f * scoreScale;
         float scoreTextWidth = scoreStr.length() * scoreCharWidth;
         float scoreX = (hudScreenWidth - scoreTextWidth) / 2.0f;
-        float scoreY = winY - 60.0f;
+        float scoreY = gameOverY + 80.0f;
         
-        // Green overlay - centered
-        float overlayWidth = 480.0f;
-        float overlayHeight = 160.0f;
-        float overlayX = (hudScreenWidth - overlayWidth) / 2.0f;
-        float overlayY = winY - overlayHeight / 2.0f - 40.0f;
-        drawHUDQuad(overlayX, overlayY, overlayWidth, overlayHeight, 0.0f, 0.8f, 0.2f);
+        winTextRenderer.renderTextScaled(scoreStr, scoreX + 2.0f, scoreY + 2.0f, 
+                                        glm::vec3(0.0f, 0.3f, 0.4f), scoreScale);
+        winTextRenderer.renderTextScaled(scoreStr, scoreX, scoreY, 
+                                        glm::vec3(0.4f, 1.0f, 1.0f), scoreScale);
         
-        winTextRenderer.renderTextScaled("YOU WIN!!", winX, winY, glm::vec3(1.0f, 1.0f, 1.0f), winScale);
-        winTextRenderer.renderTextScaled(scoreStr, scoreX, scoreY, glm::vec3(1.0f, 1.0f, 1.0f), scoreScale);
+        // Restart instruction with blinking stars effect
+        float blinkAlpha = (int)(levelTimer * 2.0f) % 2 == 0 ? 1.0f : 0.6f;
+        std::string restartText = "PRESS R TO RESTART";
+        float restartScale = 1.5f;
+        float restartCharWidth = 8.0f * restartScale;
+        float restartTextWidth = restartText.length() * restartCharWidth;
+        float restartX = (hudScreenWidth - restartTextWidth) / 2.0f;
+        float restartY = scoreY + 70.0f;
+        
+        winTextRenderer.renderTextScaled(restartText, restartX, restartY, 
+                                        glm::vec3(0.8f * blinkAlpha, 0.9f * blinkAlpha, 1.0f * blinkAlpha), restartScale);
+    }
+    
+    // Win overlay (if completed)
+    if (completed) {
+        // Deep space background - same as game over
+        drawHUDQuad(0.0f, 0.0f, hudScreenWidth, hudScreenHeight, 0.05f, 0.05f, 0.15f);
+        
+        // Animated starfield effect - random stars
+        srand(12345);  // Fixed seed for consistent star positions
+        for (int i = 0; i < 200; ++i) {
+            float starX = (rand() % (int)hudScreenWidth);
+            float starY = (rand() % (int)hudScreenHeight);
+            float starSize = 1.0f + (rand() % 3);
+            
+            // Twinkling effect
+            float twinkle = 0.5f + 0.5f * sin(levelTimer * 3.0f + i * 0.5f);
+            float brightness = 0.7f + 0.3f * twinkle;
+            
+            drawHUDQuad(starX, starY, starSize, starSize, brightness, brightness, brightness);
+        }
+        
+        // Shooting stars
+        for (int i = 0; i < 3; ++i) {
+            float shootTime = fmod(levelTimer * 0.8f + i * 2.0f, 5.0f);
+            if (shootTime < 1.5f) {
+                float progress = shootTime / 1.5f;
+                float shootX = -100.0f + progress * (hudScreenWidth + 200.0f);
+                float shootY = 100.0f + i * 200.0f + progress * 100.0f;
+                
+                // Shooting star trail
+                for (int j = 0; j < 10; ++j) {
+                    float fade = 1.0f - (j / 10.0f);
+                    float px = shootX - j * 8.0f;
+                    float py = shootY - j * 4.0f;
+                    drawHUDQuad(px, py, 4.0f, 2.0f, 0.9f * fade, 0.9f * fade, 1.0f * fade);
+                }
+            }
+        }
+        
+        // Calculate text positions centered on actual screen dimensions - same as game over
+        float winScale = 3.5f;
+        float charWidth = 8.0f * winScale;
+        float winTextWidth = 9 * charWidth;
+        float winX = (hudScreenWidth - winTextWidth) / 2.0f;
+        float winY = (hudScreenHeight / 2.0f) - 60.0f;
+        
+        // Pulsing victory text effect with green glow
+        float textPulse = 0.7f + 0.3f * sin(levelTimer * 4.0f);
+        glm::vec3 textColor = glm::vec3(0.4f + textPulse * 0.3f, 1.0f, 0.3f + textPulse * 0.2f);
+        
+        // Main "YOU WIN!!" text with glow effect (multiple shadows)
+        for (int i = 3; i > 0; --i) {
+            float glowDist = i * 2.0f;
+            float glowAlpha = 0.4f / i;
+            winTextRenderer.renderTextScaled("YOU WIN!!", winX + glowDist, winY + glowDist, 
+                                            glm::vec3(0.0f, 0.6f * glowAlpha, 0.0f), winScale);
+        }
+        winTextRenderer.renderTextScaled("YOU WIN!!", winX, winY, textColor, winScale);
+        
+        // Score display with golden color
+        std::string scoreStr = "SCORE: " + std::to_string(score);
+        float scoreScale = 2.0f;
+        float scoreCharWidth = 8.0f * scoreScale;
+        float scoreTextWidth = scoreStr.length() * scoreCharWidth;
+        float scoreX = (hudScreenWidth - scoreTextWidth) / 2.0f;
+        float scoreY = winY + 80.0f;
+        
+        winTextRenderer.renderTextScaled(scoreStr, scoreX + 2.0f, scoreY + 2.0f, 
+                                        glm::vec3(0.4f, 0.3f, 0.0f), scoreScale);
+        winTextRenderer.renderTextScaled(scoreStr, scoreX, scoreY, 
+                                        glm::vec3(1.0f, 0.9f, 0.2f), scoreScale);
+        
+        // Continue instruction with blinking effect
+        float blinkAlpha = (int)(levelTimer * 2.0f) % 2 == 0 ? 1.0f : 0.6f;
+        std::string continueText = "PRESS SPACE TO CONTINUE";
+        float continueScale = 1.5f;
+        float continueCharWidth = 8.0f * continueScale;
+        float continueTextWidth = continueText.length() * continueCharWidth;
+        float continueX = (hudScreenWidth - continueTextWidth) / 2.0f;
+        float continueY = scoreY + 70.0f;
+        
+        winTextRenderer.renderTextScaled(continueText, continueX, continueY, 
+                                        glm::vec3(0.8f * blinkAlpha, 0.9f * blinkAlpha, 1.0f * blinkAlpha), continueScale);
     }
     
     // Restore OpenGL state
@@ -1722,29 +1907,28 @@ void Level1OuterDriftZone::renderHUD2D() {
 }
 
 void Level1OuterDriftZone::drawHeart(float x, float y, float size, float r, float g, float b) {
-    // Draw a heart shape using multiple triangles
-    // Heart is composed of two circles on top and a triangle below
+    // Draw a more realistic heart shape with fuller lobes and smooth curves
     
     float halfSize = size / 2.0f;
-    float quarterSize = size / 4.0f;
+    float lobeRadius = size * 0.28f;  // Larger lobes for better heart shape
+    float centerY = y + size * 0.25f;  // Position lobes higher
     
-    // Left circle (top-left bump)
-    int segments = 12;
+    int segments = 16;  // More segments for smoother curves
+    
+    // Left lobe (top-left bump) - draw from bottom to top
+    float leftCenterX = x + size * 0.25f;
     for (int i = 0; i < segments; ++i) {
-        float angle1 = 3.14159f + (3.14159f * i / segments);
-        float angle2 = 3.14159f + (3.14159f * (i + 1) / segments);
+        // Angle from -45° to 225° for a fuller, rounder lobe
+        float angle1 = -0.785f + (4.71f * i / segments);
+        float angle2 = -0.785f + (4.71f * (i + 1) / segments);
         
-        float cx = x + quarterSize;
-        float cy = y + quarterSize;
+        float x1 = leftCenterX + cos(angle1) * lobeRadius;
+        float y1 = centerY + sin(angle1) * lobeRadius;
+        float x2 = leftCenterX + cos(angle2) * lobeRadius;
+        float y2 = centerY + sin(angle2) * lobeRadius;
         
-        float x1 = cx + cos(angle1) * quarterSize;
-        float y1 = cy + sin(angle1) * quarterSize;
-        float x2 = cx + cos(angle2) * quarterSize;
-        float y2 = cy + sin(angle2) * quarterSize;
-        
-        // Triangle from center to arc segment
         float vertices[] = {
-            cx, cy,
+            leftCenterX, centerY,
             x1, y1,
             x2, y2
         };
@@ -1760,21 +1944,19 @@ void Level1OuterDriftZone::drawHeart(float x, float y, float size, float r, floa
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
     
-    // Right circle (top-right bump)
+    // Right lobe (top-right bump) - draw from bottom to top
+    float rightCenterX = x + size * 0.75f;
     for (int i = 0; i < segments; ++i) {
-        float angle1 = 3.14159f + (3.14159f * i / segments);
-        float angle2 = 3.14159f + (3.14159f * (i + 1) / segments);
+        float angle1 = -0.785f + (4.71f * i / segments);
+        float angle2 = -0.785f + (4.71f * (i + 1) / segments);
         
-        float cx = x + halfSize + quarterSize;
-        float cy = y + quarterSize;
-        
-        float x1 = cx + cos(angle1) * quarterSize;
-        float y1 = cy + sin(angle1) * quarterSize;
-        float x2 = cx + cos(angle2) * quarterSize;
-        float y2 = cy + sin(angle2) * quarterSize;
+        float x1 = rightCenterX + cos(angle1) * lobeRadius;
+        float y1 = centerY + sin(angle1) * lobeRadius;
+        float x2 = rightCenterX + cos(angle2) * lobeRadius;
+        float y2 = centerY + sin(angle2) * lobeRadius;
         
         float vertices[] = {
-            cx, cy,
+            rightCenterX, centerY,
             x1, y1,
             x2, y2
         };
@@ -1786,24 +1968,72 @@ void Level1OuterDriftZone::drawHeart(float x, float y, float size, float r, floa
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
     
-    // Center rectangle connecting the two bumps
-    drawHUDQuad(x + quarterSize, y, halfSize, quarterSize, r, g, b);
+    // Fill center area between lobes
+    float centerTop = centerY - lobeRadius * 0.5f;
+    drawHUDQuad(leftCenterX, centerTop, rightCenterX - leftCenterX, lobeRadius * 0.8f, r, g, b);
     
-    // Bottom triangle (the point of the heart)
-    float triVertices[] = {
-        x, y + quarterSize,
-        x + size, y + quarterSize,
-        x + halfSize, y + size
-    };
+    // Bottom curved sides leading to the point
+    float midY = centerY + lobeRadius * 0.3f;
+    int sideCurveSegments = 8;
     
-    glBindBuffer(GL_ARRAY_BUFFER, hudVBO);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(triVertices), triVertices);
+    // Left side curve
+    for (int i = 0; i < sideCurveSegments; ++i) {
+        float t1 = (float)i / sideCurveSegments;
+        float t2 = (float)(i + 1) / sideCurveSegments;
+        
+        float x1 = x + (1.0f - t1) * size * 0.05f;
+        float y1 = midY + t1 * (size - midY);
+        float x2 = x + (1.0f - t2) * size * 0.05f;
+        float y2 = midY + t2 * (size - midY);
+        
+        float vertices[] = {
+            x + halfSize, y + size,  // Bottom point
+            x1, y1,
+            x2, y2
+        };
+        
+        glBindBuffer(GL_ARRAY_BUFFER, hudVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        
+        glUseProgram(hudShaderProgram);
+        GLint colorLoc = glGetUniformLocation(hudShaderProgram, "color");
+        glUniform3f(colorLoc, r, g, b);
+        
+        glBindVertexArray(hudVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
     
-    glUseProgram(hudShaderProgram);
-    GLint colorLoc = glGetUniformLocation(hudShaderProgram, "color");
-    glUniform3f(colorLoc, r, g, b);
+    // Right side curve
+    for (int i = 0; i < sideCurveSegments; ++i) {
+        float t1 = (float)i / sideCurveSegments;
+        float t2 = (float)(i + 1) / sideCurveSegments;
+        
+        float x1 = x + size - (1.0f - t1) * size * 0.05f;
+        float y1 = midY + t1 * (size - midY);
+        float x2 = x + size - (1.0f - t2) * size * 0.05f;
+        float y2 = midY + t2 * (size - midY);
+        
+        float vertices[] = {
+            x + halfSize, y + size,  // Bottom point
+            x2, y2,
+            x1, y1
+        };
+        
+        glBindBuffer(GL_ARRAY_BUFFER, hudVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        
+        glUseProgram(hudShaderProgram);
+        GLint colorLoc = glGetUniformLocation(hudShaderProgram, "color");
+        glUniform3f(colorLoc, r, g, b);
+        
+        glBindVertexArray(hudVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
     
-    glBindVertexArray(hudVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    // Center fill from lobes to point
+    float fillTop = midY;
+    float fillHeight = size - midY - size * 0.15f;
+    drawHUDQuad(leftCenterX, fillTop, rightCenterX - leftCenterX, fillHeight, r, g, b);
+    
     glBindVertexArray(0);
 }

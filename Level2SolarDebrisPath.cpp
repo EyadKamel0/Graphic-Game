@@ -45,7 +45,7 @@ Level2SolarDebrisPath::Level2SolarDebrisPath()
       scrollSpeed(L2_SCROLL_SPEED), worldZOffset(0.0f),
       completed(false), gameOver(false), levelTimer(0.0f),
       lastFireTime(0.0f), fireRate(0.15f), burstFireRate(0.05f), score(0),
-      hudVAO(0), hudVBO(0), hudShaderProgram(0) {
+      hudVAO(0), hudVBO(0), hudShaderProgram(0), spaceKeyWasPressed(false) {
 }
 
 Level2SolarDebrisPath::~Level2SolarDebrisPath() {
@@ -239,11 +239,19 @@ void Level2SolarDebrisPath::update(float dt, Game& game) {
     // Get player ship reference for use throughout update
     PlayerShip* ship = game.getPlayerShip();
     
-    // Allow restart on win (completed) with R key
+    // Allow restart on win (completed) with R key, or return to intro screen with SPACE
     if (completed) {
         if (glfwGetKey(game.getWindow(), GLFW_KEY_R) == GLFW_PRESS) {
             resetLevel(game);
         }
+        
+        // SPACE key returns to intro screen (PLAY GAME button) after winning Level 2
+        // Debouncing: only trigger on key press, not hold
+        bool spaceKeyPressed = glfwGetKey(game.getWindow(), GLFW_KEY_SPACE) == GLFW_PRESS;
+        if (spaceKeyPressed && !spaceKeyWasPressed) {
+            game.returnToIntroScreen();
+        }
+        spaceKeyWasPressed = spaceKeyPressed;
         return;
     }
     
@@ -510,8 +518,7 @@ void Level2SolarDebrisPath::update(float dt, Game& game) {
     }
     
     if (portal && portal->getState() == BlackHoleState::Completed) {
-        // Freeze the game - black screen with WIN
-        blackHoleFreeze = true;
+        // Level complete - show You Win screen
         completed = true;
         std::cout << "🎉 Level 2 Complete! Congratulations - YOU WIN! 🎉" << std::endl;
     }
@@ -942,37 +949,6 @@ void Level2SolarDebrisPath::resetLevel(Game& game) {
 }
 
 void Level2SolarDebrisPath::render(Game& game) {
-    // If black hole capture is complete, show black screen with WIN text
-    if (blackHoleFreeze) {
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        // Render "YOU WIN!!" in green at center of screen
-        int screenW = hudScreenWidth;
-        int screenH = hudScreenHeight;
-        
-        // Calculate center position for "YOU WIN!!" text (9 characters)
-        float textScale = 10.0f;  // Large text
-        float charWidth = 8.0f * textScale;
-        float charHeight = 12.0f * textScale;
-        float textWidth = 9 * charWidth;  // "YOU WIN!!" = 9 characters
-        float x = (screenW - textWidth) / 2.0f;
-        float y = (screenH + charHeight) / 2.0f;  // Center vertically
-        
-        // Green color for YOU WIN!!
-        winTextRenderer.renderTextScaled("YOU WIN!!", x, y, glm::vec3(0.0f, 1.0f, 0.0f), textScale);
-        
-        // Show score below WIN text
-        std::string scoreStr = "SCORE:" + std::to_string(score);
-        float scoreScale = 4.0f;
-        float scoreCharWidth = 8.0f * scoreScale;
-        float scoreWidth = scoreStr.length() * scoreCharWidth;
-        float scoreX = (screenW - scoreWidth) / 2.0f;
-        float scoreY = y - 150.0f;  // Below WIN text
-        winTextRenderer.renderTextScaled(scoreStr, scoreX, scoreY, glm::vec3(1.0f, 1.0f, 1.0f), scoreScale);
-        return;
-    }
-    
     // Get view and projection matrices
     glm::mat4 view = game.getCameraController()->getViewMatrix();
     float aspect = (float)game.getScreenWidth() / (float)game.getScreenHeight();
@@ -1488,15 +1464,29 @@ void Level2SolarDebrisPath::renderHUD2D() {
     }
     yPos += heartSize + 15.0f;
     
-    // Energy Cell bars (6 segments - red theme for Level 2)
+    // Energy Cell bars (6 segments - red theme for Level 2) - Enhanced
+    float cellWidth = 30.0f;
+    float cellSpacing = 35.0f;
     for (int i = 0; i < hudState.totalCells; ++i) {
-        float r, g, b;
+        float xPos = margin + i * cellSpacing;
+        
+        // Outer border (darker)
+        drawHUDQuad(xPos - 2.0f, yPos - 2.0f, cellWidth + 4.0f, barHeight + 4.0f, 0.1f, 0.1f, 0.1f);
+        
         if (i < hudState.collectedCells) {
-            r = 1.0f; g = 0.2f; b = 0.2f;  // Red (collected)
+            // Collected: Red with glow
+            float pulse = 0.9f + 0.1f * sin(levelTimer * 5.0f + i * 0.5f);
+            // Glow effect (behind)
+            drawHUDQuad(xPos - 3.0f, yPos - 3.0f, cellWidth + 6.0f, barHeight + 6.0f, 1.0f * 0.3f * pulse, 0.2f * 0.3f * pulse, 0.2f * 0.3f * pulse);
+            // Main bar with gradient (brighter top)
+            drawHUDQuad(xPos, yPos, cellWidth, barHeight * 0.5f, 1.0f * pulse, 0.3f, 0.3f);  // Top half
+            drawHUDQuad(xPos, yPos + barHeight * 0.5f, cellWidth, barHeight * 0.5f, 0.8f * pulse, 0.1f, 0.1f);  // Bottom half
         } else {
-            r = 0.3f; g = 0.3f; b = 0.3f;  // Dark gray
+            // Empty: Dark gray
+            drawHUDQuad(xPos, yPos, cellWidth, barHeight, 0.25f, 0.25f, 0.25f);
+            // Inner shadow
+            drawHUDQuad(xPos, yPos, cellWidth, 3.0f, 0.15f, 0.15f, 0.15f);
         }
-        drawHUDQuad(margin + i * 35.0f, yPos, 30.0f, barHeight, r, g, b);
     }
     yPos += barHeight + 10.0f;
     
@@ -1536,16 +1526,42 @@ void Level2SolarDebrisPath::renderHUD2D() {
         yPos += barHeight + 10.0f;
     }
     
-    // Portal status bar
+    // Portal status bar - Enhanced
+    float portalBarWidth = 150.0f;
     float r, g, b;
+    std::string portalText;
+    
+    // Outer border
+    drawHUDQuad(margin - 2.0f, yPos - 2.0f, portalBarWidth + 4.0f, barHeight + 4.0f, 0.1f, 0.1f, 0.1f);
+    
     if (hudState.portalActive) {
         r = 0.0f; g = 1.0f; b = 0.5f;  // Green (active)
+        portalText = "PORTAL READY";
+        // Pulsing glow
+        float pulse = 0.8f + 0.2f * sin(levelTimer * 6.0f);
+        drawHUDQuad(margin - 3.0f, yPos - 3.0f, portalBarWidth + 6.0f, barHeight + 6.0f, 0.0f, 1.0f * 0.4f * pulse, 0.5f * 0.4f * pulse);
+        // Gradient fill
+        drawHUDQuad(margin, yPos, portalBarWidth, barHeight * 0.5f, 0.2f, 1.0f * pulse, 0.7f * pulse);
+        drawHUDQuad(margin, yPos + barHeight * 0.5f, portalBarWidth, barHeight * 0.5f, 0.0f, 0.8f * pulse, 0.4f * pulse);
     } else if (portal && portal->getState() == BlackHoleState::Activating) {
         r = 1.0f; g = 0.5f; b = 0.0f;  // Orange (spawning)
+        portalText = "SPAWNING...";
+        float pulse = 0.7f + 0.3f * sin(levelTimer * 8.0f);
+        drawHUDQuad(margin - 3.0f, yPos - 3.0f, portalBarWidth + 6.0f, barHeight + 6.0f, 1.0f * 0.3f * pulse, 0.5f * 0.3f * pulse, 0.0f);
+        drawHUDQuad(margin, yPos, portalBarWidth, barHeight, r * pulse, g * pulse, b * 0.2f);
     } else {
-        r = 0.5f; g = 0.5f; b = 0.5f;  // Gray (locked)
+        r = 0.4f; g = 0.4f; b = 0.4f;  // Gray (locked)
+        portalText = "LOCKED";
+        drawHUDQuad(margin, yPos, portalBarWidth, barHeight, r, g, b);
+        // Diagonal stripes for locked state
+        for (int i = 0; i < 8; ++i) {
+            float stripeX = margin + i * 20.0f;
+            drawHUDQuad(stripeX, yPos, 2.0f, barHeight, 0.3f, 0.3f, 0.3f);
+        }
     }
-    drawHUDQuad(margin, yPos, 150.0f, barHeight, r, g, b);
+    
+    // Portal status text
+    winTextRenderer.renderTextScaled(portalText, margin + 5.0f, yPos + 6.0f, glm::vec3(r, g, b), 1.0f);
     
     // Score display (top-right corner)
     std::string scoreText = std::to_string(score);
@@ -1554,50 +1570,168 @@ void Level2SolarDebrisPath::renderHUD2D() {
     
     // Game Over overlay
     if (!hudState.shipAlive) {
-        // Calculate centered position for "GAME OVER" (9 chars)
-        float gameOverScale = 2.5f;
+        // Deep space background with more color
+        drawHUDQuad(0.0f, 0.0f, hudScreenWidth, hudScreenHeight, 0.05f, 0.05f, 0.15f);
+        
+        // Animated starfield effect - random stars
+        srand(12345);  // Fixed seed for consistent star positions
+        for (int i = 0; i < 200; ++i) {
+            float starX = (rand() % (int)hudScreenWidth);
+            float starY = (rand() % (int)hudScreenHeight);
+            float starSize = 1.0f + (rand() % 3);
+            
+            // Twinkling effect
+            float twinkle = 0.5f + 0.5f * sin(levelTimer * 3.0f + i * 0.5f);
+            float brightness = 0.7f + 0.3f * twinkle;
+            
+            drawHUDQuad(starX, starY, starSize, starSize, brightness, brightness, brightness);
+        }
+        
+        // Shooting stars
+        for (int i = 0; i < 3; ++i) {
+            float shootTime = fmod(levelTimer * 0.8f + i * 2.0f, 5.0f);
+            if (shootTime < 1.5f) {
+                float progress = shootTime / 1.5f;
+                float shootX = -100.0f + progress * (hudScreenWidth + 200.0f);
+                float shootY = 100.0f + i * 200.0f + progress * 100.0f;
+                
+                // Shooting star trail
+                for (int j = 0; j < 10; ++j) {
+                    float fade = 1.0f - (j / 10.0f);
+                    float px = shootX - j * 8.0f;
+                    float py = shootY - j * 4.0f;
+                    drawHUDQuad(px, py, 4.0f, 2.0f, 0.9f * fade, 0.9f * fade, 1.0f * fade);
+                }
+            }
+        }
+        
+        // Calculate text positions centered on actual screen dimensions
+        float gameOverScale = 3.5f;
         float charWidth = 8.0f * gameOverScale;
-        float gameOverTextWidth = 9 * charWidth;  // "GAME OVER" = 9 chars
+        float gameOverTextWidth = 9 * charWidth;
         float gameOverX = (hudScreenWidth - gameOverTextWidth) / 2.0f;
-        float gameOverY = hudScreenHeight / 2.0f;
+        float gameOverY = (hudScreenHeight / 2.0f) - 60.0f;
         
-        // Red flash overlay - centered
-        float overlayWidth = 480.0f;
-        float overlayHeight = 120.0f;
-        float overlayX = (hudScreenWidth - overlayWidth) / 2.0f;
-        float overlayY = gameOverY - overlayHeight / 2.0f - 20.0f;
-        drawHUDQuad(overlayX, overlayY, overlayWidth, overlayHeight, 1.0f, 0.0f, 0.0f);
+        // Pulsing cosmic text effect with red/orange glow
+        float textPulse = 0.7f + 0.3f * sin(levelTimer * 4.0f);
+        glm::vec3 textColor = glm::vec3(1.0f, 0.4f + textPulse * 0.2f, 0.1f);
         
-        // Show "GAME OVER" text - centered
-        winTextRenderer.renderTextScaled("GAME OVER", gameOverX, gameOverY, glm::vec3(1.0f, 1.0f, 1.0f), gameOverScale);
+        // Main "GAME OVER" text with glow effect (multiple shadows)
+        for (int i = 3; i > 0; --i) {
+            float glowDist = i * 2.0f;
+            float glowAlpha = 0.4f / i;
+            winTextRenderer.renderTextScaled("GAME OVER", gameOverX + glowDist, gameOverY + glowDist, 
+                                            glm::vec3(1.0f * glowAlpha, 0.3f * glowAlpha, 0.0f), gameOverScale);
+        }
+        winTextRenderer.renderTextScaled("GAME OVER", gameOverX, gameOverY, textColor, gameOverScale);
+        
+        // Score display with cyan cosmic color
+        std::string scoreStr = "SCORE: " + std::to_string(score);
+        float scoreScale = 2.0f;
+        float scoreCharWidth = 8.0f * scoreScale;
+        float scoreTextWidth = scoreStr.length() * scoreCharWidth;
+        float scoreX = (hudScreenWidth - scoreTextWidth) / 2.0f;
+        float scoreY = gameOverY + 80.0f;
+        
+        winTextRenderer.renderTextScaled(scoreStr, scoreX + 2.0f, scoreY + 2.0f, 
+                                        glm::vec3(0.0f, 0.3f, 0.4f), scoreScale);
+        winTextRenderer.renderTextScaled(scoreStr, scoreX, scoreY, 
+                                        glm::vec3(0.4f, 1.0f, 1.0f), scoreScale);
+        
+        // Restart instruction with blinking stars effect
+        float blinkAlpha = (int)(levelTimer * 2.0f) % 2 == 0 ? 1.0f : 0.6f;
+        std::string restartText = "PRESS R TO RESTART";
+        float restartScale = 1.5f;
+        float restartCharWidth = 8.0f * restartScale;
+        float restartTextWidth = restartText.length() * restartCharWidth;
+        float restartX = (hudScreenWidth - restartTextWidth) / 2.0f;
+        float restartY = scoreY + 70.0f;
+        
+        winTextRenderer.renderTextScaled(restartText, restartX, restartY, 
+                                        glm::vec3(0.8f * blinkAlpha, 0.9f * blinkAlpha, 1.0f * blinkAlpha), restartScale);
     }
     
     // Win overlay (if completed)
     if (completed) {
-        // Calculate centered position for "YOU WIN!!" (9 chars)
-        float winScale = 3.0f;
-        float winCharWidth = 8.0f * winScale;
-        float winTextWidth = 9 * winCharWidth;  // "YOU WIN!!" = 9 chars
+        // Deep space background - same as game over
+        drawHUDQuad(0.0f, 0.0f, hudScreenWidth, hudScreenHeight, 0.05f, 0.05f, 0.15f);
+        
+        // Animated starfield effect - random stars
+        srand(12345);  // Fixed seed for consistent star positions
+        for (int i = 0; i < 200; ++i) {
+            float starX = (rand() % (int)hudScreenWidth);
+            float starY = (rand() % (int)hudScreenHeight);
+            float starSize = 1.0f + (rand() % 3);
+            
+            // Twinkling effect
+            float twinkle = 0.5f + 0.5f * sin(levelTimer * 3.0f + i * 0.5f);
+            float brightness = 0.7f + 0.3f * twinkle;
+            
+            drawHUDQuad(starX, starY, starSize, starSize, brightness, brightness, brightness);
+        }
+        
+        // Shooting stars
+        for (int i = 0; i < 3; ++i) {
+            float shootTime = fmod(levelTimer * 0.8f + i * 2.0f, 5.0f);
+            if (shootTime < 1.5f) {
+                float progress = shootTime / 1.5f;
+                float shootX = -100.0f + progress * (hudScreenWidth + 200.0f);
+                float shootY = 100.0f + i * 200.0f + progress * 100.0f;
+                
+                // Shooting star trail
+                for (int j = 0; j < 10; ++j) {
+                    float fade = 1.0f - (j / 10.0f);
+                    float px = shootX - j * 8.0f;
+                    float py = shootY - j * 4.0f;
+                    drawHUDQuad(px, py, 4.0f, 2.0f, 0.9f * fade, 0.9f * fade, 1.0f * fade);
+                }
+            }
+        }
+        
+        // Calculate text positions centered on actual screen dimensions - same as game over
+        float winScale = 3.5f;
+        float charWidth = 8.0f * winScale;
+        float winTextWidth = 9 * charWidth;
         float winX = (hudScreenWidth - winTextWidth) / 2.0f;
-        float winY = hudScreenHeight / 2.0f + 20.0f;
+        float winY = (hudScreenHeight / 2.0f) - 60.0f;
         
-        // Calculate score text position
-        std::string scoreStr = "SCORE:" + std::to_string(score);
-        float scoreScaleWin = 2.0f;
-        float scoreCharWidth = 8.0f * scoreScaleWin;
+        // Pulsing victory text effect with green glow
+        float textPulse = 0.7f + 0.3f * sin(levelTimer * 4.0f);
+        glm::vec3 textColor = glm::vec3(0.4f + textPulse * 0.3f, 1.0f, 0.3f + textPulse * 0.2f);
+        
+        // Main "YOU WIN!!" text with glow effect (multiple shadows)
+        for (int i = 3; i > 0; --i) {
+            float glowDist = i * 2.0f;
+            float glowAlpha = 0.4f / i;
+            winTextRenderer.renderTextScaled("YOU WIN!!", winX + glowDist, winY + glowDist, 
+                                            glm::vec3(0.0f, 0.6f * glowAlpha, 0.0f), winScale);
+        }
+        winTextRenderer.renderTextScaled("YOU WIN!!", winX, winY, textColor, winScale);
+        
+        // Score display with golden color (shifted slightly left)
+        std::string scoreStr = "SCORE: " + std::to_string(score);
+        float scoreScale = 2.0f;
+        float scoreCharWidth = 8.0f * scoreScale;
         float scoreTextWidth = scoreStr.length() * scoreCharWidth;
-        float scoreXWin = (hudScreenWidth - scoreTextWidth) / 2.0f;
-        float scoreYWin = winY - 60.0f;
+        float scoreX = (hudScreenWidth - scoreTextWidth) / 2.0f - 40.0f;  // Shift 40 pixels left
+        float scoreY = winY + 80.0f;
         
-        // Green overlay - centered
-        float overlayWidth = 480.0f;
-        float overlayHeight = 160.0f;
-        float overlayX = (hudScreenWidth - overlayWidth) / 2.0f;
-        float overlayY = winY - overlayHeight / 2.0f - 40.0f;
-        drawHUDQuad(overlayX, overlayY, overlayWidth, overlayHeight, 0.0f, 0.8f, 0.2f);
+        winTextRenderer.renderTextScaled(scoreStr, scoreX + 2.0f, scoreY + 2.0f, 
+                                        glm::vec3(0.4f, 0.3f, 0.0f), scoreScale);
+        winTextRenderer.renderTextScaled(scoreStr, scoreX, scoreY, 
+                                        glm::vec3(1.0f, 0.9f, 0.2f), scoreScale);
         
-        winTextRenderer.renderTextScaled("YOU WIN!!", winX, winY, glm::vec3(1.0f, 1.0f, 1.0f), winScale);
-        winTextRenderer.renderTextScaled(scoreStr, scoreXWin, scoreYWin, glm::vec3(1.0f, 1.0f, 1.0f), scoreScaleWin);
+        // Continue instruction with blinking effect
+        float blinkAlpha = (int)(levelTimer * 2.0f) % 2 == 0 ? 1.0f : 0.6f;
+        std::string continueText = "PRESS SPACE TO CONTINUE";
+        float continueScale = 1.5f;
+        float continueCharWidth = 8.0f * continueScale;
+        float continueTextWidth = continueText.length() * continueCharWidth;
+        float continueX = (hudScreenWidth - continueTextWidth) / 2.0f;
+        float continueY = scoreY + 70.0f;
+        
+        winTextRenderer.renderTextScaled(continueText, continueX, continueY, 
+                                        glm::vec3(0.8f * blinkAlpha, 0.9f * blinkAlpha, 1.0f * blinkAlpha), continueScale);
     }
     
     // Restore OpenGL state
@@ -1606,29 +1740,28 @@ void Level2SolarDebrisPath::renderHUD2D() {
 }
 
 void Level2SolarDebrisPath::drawHeart(float x, float y, float size, float r, float g, float b) {
-    // Draw a heart shape using multiple triangles
-    // Heart is composed of two circles on top and a triangle below
+    // Draw a more realistic heart shape with fuller lobes and smooth curves
     
     float halfSize = size / 2.0f;
-    float quarterSize = size / 4.0f;
+    float lobeRadius = size * 0.28f;  // Larger lobes for better heart shape
+    float centerY = y + size * 0.25f;  // Position lobes higher
     
-    // Left circle (top-left bump)
-    int segments = 12;
+    int segments = 16;  // More segments for smoother curves
+    
+    // Left lobe (top-left bump) - draw from bottom to top
+    float leftCenterX = x + size * 0.25f;
     for (int i = 0; i < segments; ++i) {
-        float angle1 = 3.14159f + (3.14159f * i / segments);
-        float angle2 = 3.14159f + (3.14159f * (i + 1) / segments);
+        // Angle from -45° to 225° for a fuller, rounder lobe
+        float angle1 = -0.785f + (4.71f * i / segments);
+        float angle2 = -0.785f + (4.71f * (i + 1) / segments);
         
-        float cx = x + quarterSize;
-        float cy = y + quarterSize;
+        float x1 = leftCenterX + cos(angle1) * lobeRadius;
+        float y1 = centerY + sin(angle1) * lobeRadius;
+        float x2 = leftCenterX + cos(angle2) * lobeRadius;
+        float y2 = centerY + sin(angle2) * lobeRadius;
         
-        float x1 = cx + cos(angle1) * quarterSize;
-        float y1 = cy + sin(angle1) * quarterSize;
-        float x2 = cx + cos(angle2) * quarterSize;
-        float y2 = cy + sin(angle2) * quarterSize;
-        
-        // Triangle from center to arc segment
         float vertices[] = {
-            cx, cy,
+            leftCenterX, centerY,
             x1, y1,
             x2, y2
         };
@@ -1644,21 +1777,19 @@ void Level2SolarDebrisPath::drawHeart(float x, float y, float size, float r, flo
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
     
-    // Right circle (top-right bump)
+    // Right lobe (top-right bump) - draw from bottom to top
+    float rightCenterX = x + size * 0.75f;
     for (int i = 0; i < segments; ++i) {
-        float angle1 = 3.14159f + (3.14159f * i / segments);
-        float angle2 = 3.14159f + (3.14159f * (i + 1) / segments);
+        float angle1 = -0.785f + (4.71f * i / segments);
+        float angle2 = -0.785f + (4.71f * (i + 1) / segments);
         
-        float cx = x + halfSize + quarterSize;
-        float cy = y + quarterSize;
-        
-        float x1 = cx + cos(angle1) * quarterSize;
-        float y1 = cy + sin(angle1) * quarterSize;
-        float x2 = cx + cos(angle2) * quarterSize;
-        float y2 = cy + sin(angle2) * quarterSize;
+        float x1 = rightCenterX + cos(angle1) * lobeRadius;
+        float y1 = centerY + sin(angle1) * lobeRadius;
+        float x2 = rightCenterX + cos(angle2) * lobeRadius;
+        float y2 = centerY + sin(angle2) * lobeRadius;
         
         float vertices[] = {
-            cx, cy,
+            rightCenterX, centerY,
             x1, y1,
             x2, y2
         };
@@ -1670,24 +1801,93 @@ void Level2SolarDebrisPath::drawHeart(float x, float y, float size, float r, flo
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
     
-    // Center rectangle connecting the two bumps
-    drawHUDQuad(x + quarterSize, y, halfSize, quarterSize, r, g, b);
+    // Fill center area between lobes
+    float centerTop = centerY - lobeRadius * 0.5f;
+    drawHUDQuad(leftCenterX, centerTop, rightCenterX - leftCenterX, lobeRadius * 0.8f, r, g, b);
     
-    // Bottom triangle (the point of the heart)
-    float triVertices[] = {
-        x, y + quarterSize,
-        x + size, y + quarterSize,
-        x + halfSize, y + size
-    };
+    // Bottom curved sides leading to the point
+    float midY = centerY + lobeRadius * 0.3f;
+    int sideCurveSegments = 8;
     
-    glBindBuffer(GL_ARRAY_BUFFER, hudVBO);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(triVertices), triVertices);
+    // Left side curve
+    for (int i = 0; i < sideCurveSegments; ++i) {
+        float t1 = (float)i / sideCurveSegments;
+        float t2 = (float)(i + 1) / sideCurveSegments;
+        
+        float x1 = x + (1.0f - t1) * size * 0.05f;
+        float y1 = midY + t1 * (size - midY);
+        float x2 = x + (1.0f - t2) * size * 0.05f;
+        float y2 = midY + t2 * (size - midY);
+        
+        float vertices[] = {
+            x + halfSize, y + size,  // Bottom point
+            x1, y1,
+            x2, y2
+        };
+        
+        glBindBuffer(GL_ARRAY_BUFFER, hudVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        
+        glUseProgram(hudShaderProgram);
+        GLint colorLoc = glGetUniformLocation(hudShaderProgram, "color");
+        glUniform3f(colorLoc, r, g, b);
+        
+        glBindVertexArray(hudVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
     
-    glUseProgram(hudShaderProgram);
-    GLint colorLoc = glGetUniformLocation(hudShaderProgram, "color");
-    glUniform3f(colorLoc, r, g, b);
+    // Right side curve
+    for (int i = 0; i < sideCurveSegments; ++i) {
+        float t1 = (float)i / sideCurveSegments;
+        float t2 = (float)(i + 1) / sideCurveSegments;
+        
+        float x1 = x + size - (1.0f - t1) * size * 0.05f;
+        float y1 = midY + t1 * (size - midY);
+        float x2 = x + size - (1.0f - t2) * size * 0.05f;
+        float y2 = midY + t2 * (size - midY);
+        
+        float vertices[] = {
+            x + halfSize, y + size,  // Bottom point
+            x2, y2,
+            x1, y1
+        };
+        
+        glBindBuffer(GL_ARRAY_BUFFER, hudVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        
+        glUseProgram(hudShaderProgram);
+        GLint colorLoc = glGetUniformLocation(hudShaderProgram, "color");
+        glUniform3f(colorLoc, r, g, b);
+        
+        glBindVertexArray(hudVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
     
-    glBindVertexArray(hudVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    // Center fill from lobes to point
+    float fillTop = midY;
+    float fillHeight = size - midY - size * 0.15f;
+    drawHUDQuad(leftCenterX, fillTop, rightCenterX - leftCenterX, fillHeight, r, g, b);
+    
     glBindVertexArray(0);
+}
+
+void Level2SolarDebrisPath::collectAllCells() {
+    // Set collected cells to required amount
+    collectedCellCount = requiredCellCount;
+    hudState.collectedCells = requiredCellCount;
+    
+    // Activate portal
+    if (portal) {
+        portal->spawn();  // BlackHolePortal uses spawn() not activate()
+        hudState.portalActive = true;
+        hudState.portalActivatedFlashTimer = 1.0f;
+        std::cout << "[CHEAT] All cells collected! Portal activated!" << std::endl;
+    }
+}
+
+void Level2SolarDebrisPath::resetCompletionState() {
+    completed = false;
+    gameOver = false;
+    blackHoleFreeze = false;
+    portalBeingCaptured = false;
 }

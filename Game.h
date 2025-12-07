@@ -9,6 +9,7 @@
 #include "LevelManager.h"
 #include "Shader.h"
 #include "IntroScreen.h"
+#include "SimpleTextRenderer.h"
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -34,6 +35,7 @@ public:
     Shader* getPBRShader() const { return pbrShader; }
     PlayerShip* getPlayerShip() const { return playerShip; }
     CameraController* getCameraController() const { return cameraController; }
+    LevelManager* getLevelManager() const { return levelManager; }
     int getScreenWidth() const { return screenWidth; }
     int getScreenHeight() const { return screenHeight; }
     
@@ -43,6 +45,9 @@ public:
     void playPowerupSound();    // Play powerup pickup sound  
     void playCrashSound();      // Play crash/impact sound
     void playGameOverSound();   // Play game over sound
+    
+    // Return to intro screen with PLAY GAME button
+    void returnToIntroScreen();
     
 private:
     GLFWwindow* window;
@@ -55,6 +60,12 @@ private:
     CameraController* cameraController;
     LevelManager* levelManager;
     IntroScreen* introScreen;
+    SimpleTextRenderer loadingTextRenderer;  // For loading screen text
+    
+    // Loading screen HUD rendering
+    GLuint loadingHudVAO;
+    GLuint loadingHudVBO;
+    GLuint loadingHudShader;
     
     float deltaTime;
     float lastFrame;
@@ -80,6 +91,8 @@ private:
     void update();
     void render();
     void renderLoadingScreen(const char* statusText);  // Simple loading screen
+    void setupLoadingHUD();
+    void drawLoadingQuad(float x, float y, float width, float height, float r, float g, float b, float a = 1.0f);
     void initSoundSystem();
     void cleanupSoundSystem();
     

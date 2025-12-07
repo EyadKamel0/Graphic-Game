@@ -86,6 +86,10 @@ public:
     int getScore() const override { return score; }
     void setScore(int newScore) override { score = newScore; }
     
+    // Debug/cheat methods
+    void collectAllShards();  // Collect all shards and activate portal
+    void resetCompletionState() override;  // Reset completion state
+    
 private:
     // Skybox for deep space background
     Skybox* skybox;

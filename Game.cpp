@@ -1,4 +1,6 @@
 #include "Game.h"
+#include "Level1OuterDriftZone.h"
+#include "Level2SolarDebrisPath.h"
 #include "Texture.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -94,10 +96,17 @@ bool Game::init() {
     cameraController = new CameraController();
     renderLoadingScreen("Initializing camera...");
     
+    // Initialize loading screen text renderer
+    loadingTextRenderer.init(screenWidth, screenHeight);
+    
+    // Setup loading screen HUD
+    setupLoadingHUD();
+    
     // Create and initialize level manager (this loads most assets)
     levelManager = new LevelManager();
     renderLoadingScreen("Loading levels...");
     
+    // Initialize level manager (creates levels but doesn't load yet)
     levelManager->init(*this);
     renderLoadingScreen("Almost ready...");
     
@@ -114,6 +123,13 @@ bool Game::init() {
         delete introScreen;
         introScreen = nullptr;
     }
+    
+    // Show loading screen after PLAY GAME is clicked
+    renderLoadingScreen("Loading Level 1...");
+    glfwPollEvents();  // Keep window responsive
+    
+    // Force reset to Level 1 after PLAY GAME is pressed
+    levelManager->resetToFirstLevel(*this);
     
     std::cout << "\nStarwave 3D initialized successfully!" << std::endl;
     std::cout << "\n=== ON-RAILS ARCADE SHOOTER ===" << std::endl;
@@ -140,8 +156,13 @@ void Game::processInput() {
         glfwSetWindowShouldClose(window, true);
     }
     
+    // Don't process input if level manager or current level isn't ready
+    if (!levelManager || !levelManager->getCurrentLevel()) {
+        return;
+    }
+    
     // Check if controls are disabled (e.g., during win screen)
-    if (levelManager && levelManager->areControlsDisabled()) {
+    if (levelManager->areControlsDisabled()) {
         return;  // Don't process any input during freeze
     }
     
@@ -162,6 +183,62 @@ void Game::processInput() {
         levelManager->skipToLevel(1, *this);  // Index 1 = Level 2
     }
     f2WasPressed = f2Pressed;
+    
+    // Press 1 to teleport to Level 1 (only works if NOT in Level 1)
+    static bool key1WasPressed = false;
+    bool key1Pressed = (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS);
+    if (key1Pressed && !key1WasPressed) {
+        if (levelManager->getCurrentLevelIndex() != 0) {
+            std::cout << "\n[TELEPORT] Jumping to Level 1..." << std::endl;
+            levelManager->skipToLevel(0, *this);
+        } else {
+            std::cout << "[TELEPORT] Already in Level 1!" << std::endl;
+        }
+    }
+    key1WasPressed = key1Pressed;
+    
+    // Press 2 to collect all shards in Level 1 and activate portal (only works in Level 1)
+    static bool key2WasPressed = false;
+    bool key2Pressed = (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS);
+    if (key2Pressed && !key2WasPressed) {
+        if (levelManager->getCurrentLevelIndex() == 0) {
+            Level1OuterDriftZone* level1 = dynamic_cast<Level1OuterDriftZone*>(levelManager->getCurrentLevel());
+            if (level1) {
+                level1->collectAllShards();
+            }
+        } else {
+            std::cout << "[CHEAT] Can only use in Level 1!" << std::endl;
+        }
+    }
+    key2WasPressed = key2Pressed;
+    
+    // Press 3 to teleport to Level 2 (only works if NOT in Level 2)
+    static bool key3WasPressed = false;
+    bool key3Pressed = (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS);
+    if (key3Pressed && !key3WasPressed) {
+        if (levelManager->getCurrentLevelIndex() != 1) {
+            std::cout << "\n[TELEPORT] Jumping to Level 2..." << std::endl;
+            levelManager->skipToLevel(1, *this);
+        } else {
+            std::cout << "[TELEPORT] Already in Level 2!" << std::endl;
+        }
+    }
+    key3WasPressed = key3Pressed;
+    
+    // Press 4 to collect all cells in Level 2 and activate portal (only works in Level 2)
+    static bool key4WasPressed = false;
+    bool key4Pressed = (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS);
+    if (key4Pressed && !key4WasPressed) {
+        if (levelManager->getCurrentLevelIndex() == 1) {
+            Level2SolarDebrisPath* level2 = dynamic_cast<Level2SolarDebrisPath*>(levelManager->getCurrentLevel());
+            if (level2) {
+                level2->collectAllCells();
+            }
+        } else {
+            std::cout << "[CHEAT] Can only use in Level 2!" << std::endl;
+        }
+    }
+    key4WasPressed = key4Pressed;
     
     /*
      * ON-RAILS MODE: MOUSE MOVEMENT DISABLED
@@ -278,10 +355,232 @@ void Game::run() {
     }
 }
 
+void Game::returnToIntroScreen() {
+    // Reset player ship to initial state
+    if (playerShip) {
+        playerShip->position = glm::vec3(0.0f, 0.0f, playerShip->fixedZ);
+    }
+    
+    // Show intro screen with PLAY GAME button
+    introScreen = new IntroScreen();
+    if (introScreen->init(window, screenWidth, screenHeight)) {
+        introScreen->play();
+        delete introScreen;
+        introScreen = nullptr;
+    } else {
+        std::cout << "[Game] Intro screen initialization failed" << std::endl;
+        delete introScreen;
+        introScreen = nullptr;
+    }
+    
+    // Show loading screen after PLAY GAME is clicked
+    renderLoadingScreen("Loading Level 1...");
+    glfwPollEvents();  // Keep window responsive
+    
+    // Force reset to Level 1 by cleaning up current level and reloading
+    levelManager->resetToFirstLevel(*this);
+}
+
+void Game::setupLoadingHUD() {
+    // Create simple HUD shader for 2D quads
+    const char* hudVertexShader = R"(
+        #version 330 core
+        layout(location = 0) in vec2 position;
+        uniform mat4 projection;
+        void main() {
+            gl_Position = projection * vec4(position, 0.0, 1.0);
+        }
+    )";
+    
+    const char* hudFragmentShader = R"(
+        #version 330 core
+        out vec4 FragColor;
+        uniform vec4 color;
+        void main() {
+            FragColor = color;
+        }
+    )";
+    
+    // Compile shaders
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &hudVertexShader, NULL);
+    glCompileShader(vertexShader);
+    
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &hudFragmentShader, NULL);
+    glCompileShader(fragmentShader);
+    
+    loadingHudShader = glCreateProgram();
+    glAttachShader(loadingHudShader, vertexShader);
+    glAttachShader(loadingHudShader, fragmentShader);
+    glLinkProgram(loadingHudShader);
+    
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    
+    // Create VAO and VBO for quad
+    glGenVertexArrays(1, &loadingHudVAO);
+    glGenBuffers(1, &loadingHudVBO);
+    
+    glBindVertexArray(loadingHudVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, loadingHudVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, NULL, GL_DYNAMIC_DRAW);
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    
+    glBindVertexArray(0);
+}
+
+void Game::drawLoadingQuad(float x, float y, float width, float height, float r, float g, float b, float a) {
+    if (loadingHudShader == 0) return;
+    
+    // Quad vertices
+    float vertices[] = {
+        x, y,
+        x + width, y,
+        x + width, y + height,
+        x, y,
+        x + width, y + height,
+        x, y + height
+    };
+    
+    glBindBuffer(GL_ARRAY_BUFFER, loadingHudVBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    
+    glUseProgram(loadingHudShader);
+    
+    // Get current framebuffer size for projection
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    
+    glm::mat4 projection = glm::ortho(0.0f, (float)fbWidth, (float)fbHeight, 0.0f);
+    glUniformMatrix4fv(glGetUniformLocation(loadingHudShader, "projection"), 1, GL_FALSE, &projection[0][0]);
+    glUniform4f(glGetUniformLocation(loadingHudShader, "color"), r, g, b, a);
+    
+    glBindVertexArray(loadingHudVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
 void Game::renderLoadingScreen(const char* statusText) {
-    // Simple black screen with console output - keeps window responsive
-    glClearColor(0.0f, 0.0f, 0.05f, 1.0f);  // Very dark blue
+    // Dark space background
+    glClearColor(0.01f, 0.01f, 0.08f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // Get current window size
+    int currentWidth, currentHeight;
+    glfwGetFramebufferSize(window, &currentWidth, &currentHeight);
+    
+    // Disable depth test, enable blending for HUD
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Animation values
+    static float loadingProgress = 0.0f;
+    loadingProgress += 0.015f;
+    if (loadingProgress > 1.0f) loadingProgress = 0.0f;
+    
+    float pulse = 0.8f + 0.2f * sin(glfwGetTime() * 4.0f);
+    
+    float centerX = currentWidth / 2.0f;
+    float centerY = currentHeight / 2.0f;
+    
+    // Scale all UI elements based on screen height
+    float uiScale = currentHeight / 720.0f;
+    
+    // Draw corner brackets (L-shapes in each corner) - SCALED
+    float bracketSize = 60.0f * uiScale;
+    float bracketThick = 4.0f * uiScale;
+    float frameOffset = 280.0f * uiScale;
+    
+    // Top-left corner bracket
+    drawLoadingQuad(centerX - frameOffset, centerY - 130 * uiScale, bracketSize, bracketThick, 
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    drawLoadingQuad(centerX - frameOffset, centerY - 130 * uiScale, bracketThick, bracketSize,
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    
+    // Top-right corner bracket
+    drawLoadingQuad(centerX + frameOffset - bracketSize, centerY - 130 * uiScale, bracketSize, bracketThick,
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    drawLoadingQuad(centerX + frameOffset - bracketThick, centerY - 130 * uiScale, bracketThick, bracketSize,
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    
+    // Bottom-left corner bracket
+    drawLoadingQuad(centerX - frameOffset, centerY + 130 * uiScale - bracketThick, bracketSize, bracketThick,
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    drawLoadingQuad(centerX - frameOffset, centerY + 130 * uiScale - bracketSize, bracketThick, bracketSize,
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    
+    // Bottom-right corner bracket
+    drawLoadingQuad(centerX + frameOffset - bracketSize, centerY + 130 * uiScale - bracketThick, bracketSize, bracketThick,
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    drawLoadingQuad(centerX + frameOffset - bracketThick, centerY + 130 * uiScale - bracketSize, bracketThick, bracketSize,
+                    0.2f * pulse, 0.6f * pulse, 1.0f * pulse, 0.8f);
+    
+    // Loading bar - SCALED
+    float barWidth = 500.0f * uiScale;
+    float barHeight = 25.0f * uiScale;
+    float barY = centerY + 60.0f * uiScale;
+    
+    // Bar background (dark)
+    drawLoadingQuad(centerX - barWidth/2, barY, barWidth, barHeight, 0.05f, 0.05f, 0.15f, 0.9f);
+    
+    // Bar fill (animated)
+    float fillWidth = barWidth * loadingProgress;
+    drawLoadingQuad(centerX - barWidth/2, barY, fillWidth, barHeight, 
+                    0.1f * pulse, 0.5f * pulse, 1.0f * pulse, 0.9f);
+    
+    // Bar border - SCALED
+    float borderThick = 2.0f * uiScale;
+    drawLoadingQuad(centerX - barWidth/2, barY, barWidth, borderThick, 
+                    0.3f * pulse, 0.7f * pulse, 1.0f * pulse, 1.0f);
+    drawLoadingQuad(centerX - barWidth/2, barY + barHeight - borderThick, barWidth, borderThick,
+                    0.3f * pulse, 0.7f * pulse, 1.0f * pulse, 1.0f);
+    drawLoadingQuad(centerX - barWidth/2, barY, borderThick, barHeight,
+                    0.3f * pulse, 0.7f * pulse, 1.0f * pulse, 1.0f);
+    drawLoadingQuad(centerX + barWidth/2 - borderThick, barY, borderThick, barHeight,
+                    0.3f * pulse, 0.7f * pulse, 1.0f * pulse, 1.0f);
+    
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    
+    // Text rendering
+    loadingTextRenderer.updateScreenSize(currentWidth, currentHeight);
+    
+    std::string displayText = std::string(statusText);
+    int dotCount = (int)(glfwGetTime() * 2.0) % 4;
+    for (int i = 0; i < dotCount; ++i) {
+        displayText += ".";
+    }
+    
+    // Scale text based on screen height for consistent size across resolutions
+    float textScale = (currentHeight / 720.0f) * 2.5f;  // Scale relative to 720p
+    
+    // Measure actual text width for precise centering
+    float charWidth = 8.0f * textScale;  // Base character width from shader
+    float textWidth = displayText.length() * charWidth;
+    
+    // DEAD CENTER horizontally and slightly above vertical center
+    float textX = (currentWidth - textWidth) / 2.0f;
+    float textY = (currentHeight / 2.0f) - (30.0f * (currentHeight / 720.0f));
+    
+    glm::vec3 textColor(0.7f + 0.3f * pulse, 0.9f + 0.1f * pulse, 1.0f);
+    loadingTextRenderer.renderTextScaled(displayText, textX, textY, textColor, textScale);
+    
+    // Subtitle scaled proportionally
+    std::string subtitle = "INITIALIZING SYSTEMS";
+    float subtitleScale = (currentHeight / 720.0f) * 1.0f;
+    float subtitleWidth = subtitle.length() * 8.0f * subtitleScale;
+    
+    // DEAD CENTER horizontally
+    float subtitleX = (currentWidth - subtitleWidth) / 2.0f;
+    float subtitleY = textY + (40.0f * (currentHeight / 720.0f));
+    
+    glm::vec3 subtitleColor(0.4f * pulse, 0.6f * pulse, 0.8f * pulse);
+    loadingTextRenderer.renderTextScaled(subtitle, subtitleX, subtitleY, subtitleColor, subtitleScale);
+    
     glfwSwapBuffers(window);
     glfwPollEvents();
     
